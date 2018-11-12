@@ -8,19 +8,20 @@ import tensorflow as tf
 from skimage import io, transform
 
 # Flask utils
-from flask import Flask, redirect, url_for, request, render_template
+from flask import Flask, redirect, url_for, request, render_template, jsonify
 from werkzeug.utils import secure_filename
 from gevent.pywsgi import WSGIServer
 
 # Define a flask app
 app = Flask(__name__)
 
-flower_dict = {0: 'dasiy', 1: 'dandelion', 2: 'roses', 3: 'sunflowers', 4: 'tulips'}
+flower_dict = {0: 'daisy', 1: '蒲公英', 2: 'roses', 3: 'sunflowers', 4: 'tulips'}
+flower_dict_extend = {0: 'aa:1-2month bb:love place:classroom',1:'hhhhhhh'}
 
 sess = tf.Session()
 
-saver = tf.train.import_meta_graph('E:/hust-flowerclassify/models/model.ckpt.meta') # create the network
-saver.restore(sess, tf.train.latest_checkpoint('E:/hust-flowerclassify/models/')) # load the parameters
+saver = tf.train.import_meta_graph('E:\\study\\hust-flowerclassify\\models\\model.ckpt.meta') # create the network
+saver.restore(sess, tf.train.latest_checkpoint('E:\\study\\hust-flowerclassify\\models\\')) # load the parameters
 print('model loaded,now begin...')
 
 def model_predict(img_path):
@@ -44,7 +45,9 @@ def model_predict(img_path):
     # index = tf.argmax(classification_result, 1).eval()
     index = np.reshape(classification_result, 5)
     index = np.argmax(index)
-    return flower_dict[index]
+    print(index)
+    return flower_dict[index], flower_dict_extend[index]
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -60,13 +63,15 @@ def upload():
 
         # Save the file to ./uploads
         basepath = os.path.dirname(__file__)
+        print(basepath)
         file_path = os.path.join(
             basepath, 'uploads', secure_filename(f.filename))
+        print(file_path)
         f.save(file_path)
 
         # Make prediction
         preds = model_predict(file_path)
-        return preds
+        return jsonify(preds)
 
     return None
 
